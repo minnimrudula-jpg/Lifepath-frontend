@@ -1,0 +1,1 @@
+export default function PageHeader({ title, subtitle, action }) { return <div className="page-heading d-flex justify-content-between align-items-start gap-3 mb-4"><div><h1>{title}</h1>{subtitle && <p className="text-secondary mb-0">{subtitle}</p>}</div>{action}</div> }

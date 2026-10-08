@@ -1,0 +1,20 @@
+﻿import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './routes/ProtectedRoute'
+import RoleRoute from './routes/RoleRoute'
+import UserLayout from './layouts/UserLayout'
+import AdminLayout from './layouts/AdminLayout'
+import { Landing, Login, Register, AdminDashboard, AdminPage, NotFound } from './pages/PageContent'
+import Dashboard from './pages/user/Dashboard'
+import Opportunities from './pages/user/Opportunities'
+import OpportunityDetail from './pages/user/OpportunityDetails'
+import Eligibility from './pages/user/EligibilityResult'
+import Profile from './pages/user/Profile'
+import SavedOpportunities from './pages/user/SavedOpportunities'
+import Deadlines from './pages/user/Deadlines'
+import EligibilityStart from './pages/user/EligibilityStart'
+import UserEmptyPage from './pages/user/UserEmptyPage'
+import './App.css'
+
+export default function App() { return <BrowserRouter><AuthProvider><Routes><Route path="/" element={<Landing/>}/><Route path="/login" element={<Login/>}/><Route path="/register" element={<Register/>}/><Route element={<ProtectedRoute/>}><Route element={<RoleRoute role="USER"/>}><Route path="/user" element={<UserLayout/>}><Route index element={<Navigate to="dashboard" replace/>}/><Route path="dashboard" element={<Dashboard/>}/><Route path="profile" element={<Profile/>}/><Route path="opportunities" element={<Opportunities/>}/><Route path="opportunities/:id" element={<OpportunityDetail/>}/><Route path="eligibility" element={<EligibilityStart/>}/><Route path="eligibility/:id" element={<Eligibility/>}/><Route path="saved" element={<SavedOpportunities/>}/><Route path="documents" element={<UserEmptyPage type="documents"/>}/><Route path="deadlines" element={<Deadlines/>}/><Route path="preparation" element={<UserEmptyPage type="preparation"/>}/><Route path="notifications" element={<UserEmptyPage type="notifications"/>}/><Route path="settings" element={<UserEmptyPage type="settings"/>}/></Route></Route><Route element={<RoleRoute role="ADMIN"/>}><Route path="/admin" element={<AdminLayout/>}><Route index element={<Navigate to="dashboard" replace/>}/><Route path="dashboard" element={<AdminDashboard/>}/><Route path="users" element={<AdminPage type="users"/>}/><Route path="opportunities" element={<AdminPage type="opportunities"/>}/><Route path="categories" element={<AdminPage type="categories"/>}/><Route path="eligibility-rules" element={<AdminPage type="eligibility-rules"/>}/><Route path="documents" element={<AdminPage type="documents"/>}/><Route path="deadlines" element={<AdminPage type="deadlines"/>}/><Route path="analytics" element={<AdminPage type="analytics"/>}/><Route path="settings" element={<AdminPage type="settings"/>}/></Route></Route></Route><Route path="*" element={<NotFound/>}/></Routes></AuthProvider></BrowserRouter> }
+

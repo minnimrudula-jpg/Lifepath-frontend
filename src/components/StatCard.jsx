@@ -1,0 +1,3 @@
+export default function StatCard({ label, value, icon, detail, loading = false, delay = 0 }) {
+  return <div className="card stat-card h-100" style={{ '--stagger': `${delay * 45}ms` }}><div className="card-body d-flex justify-content-between align-items-start"><div className="stat-copy"><div className="small text-secondary">{label}</div>{loading ? <div className="skeleton skeleton-stat mt-2"/> : <><div className="stat-value">{value ?? '—'}</div>{detail && <div className="small text-secondary">{detail}</div>}</>}</div><span className="stat-icon"><i className={`bi bi-${icon}`} /></span></div></div>
+}
