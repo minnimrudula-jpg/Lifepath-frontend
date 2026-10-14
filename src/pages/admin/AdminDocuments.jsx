@@ -1,1 +1,1 @@
-﻿export { AdminPage as default } from '../PageContent'
+﻿export { AdminDocuments as default } from './AdminManagement'

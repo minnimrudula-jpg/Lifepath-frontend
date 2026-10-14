@@ -1,54 +1,84 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
-import { useAuth } from '../../context/AuthContext'
-import PageHeader from '../../components/PageHeader'
+import { useAuth } from '../../context/useAuth'
 import StatCard from '../../components/StatCard'
-import OpportunityCard from '../../components/OpportunityCard'
 import EmptyState from '../../components/EmptyState'
 
 const profileFields = ['dateOfBirth', 'gender', 'category', 'annualIncome', 'education', 'branch', 'experienceYears', 'phone', 'address', 'city', 'state']
+const featureCards = [
+  { title: 'Discover opportunities', description: 'Find jobs, exams and scholarships that match your profile.', to: '/user/opportunities', image: 'discover', action: 'Explore opportunities' },
+  { title: 'Check my eligibility', description: 'See whether you meet an opportunityâ€™s requirements.', to: '/user/eligibility', image: 'eligibility', action: 'Check eligibility' },
+  { title: 'My saved opportunities', description: 'Keep the opportunities you like together in one place.', to: '/user/saved', image: 'saved', action: 'View saved' },
+  { title: 'Track deadlines', description: 'Know which application dates are coming soon.', to: '/user/deadlines', image: 'deadlines', action: 'View deadlines' },
+  { title: 'My documents', description: 'Keep track of the documents you need for applications.', to: '/user/documents', image: 'documents', action: 'View documents' },
+  { title: 'Preparation planner', description: 'Plan your next steps and track your progress.', to: '/user/preparation', image: 'preparation', action: 'Open planner' },
+]
+
+const asList = result => result.status === 'fulfilled' && Array.isArray(result.value.data) ? result.value.data : null
+
 export default function Dashboard() {
   const { user } = useAuth()
-  const [data, setData] = useState({ profile: null, opportunities: [], saved: [], deadlines: [] })
+  const navigate = useNavigate()
+  const [data, setData] = useState({ profile: null, opportunities: null, saved: null, deadlines: null, notifications: null })
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [loadFailed, setLoadFailed] = useState(false)
+  const [search, setSearch] = useState('')
+  const [requestErrors, setRequestErrors] = useState({})
+
   useEffect(() => {
-    Promise.all([api.get('/profile'), api.get('/opportunities'), api.get('/saved-opportunities'), api.get('/deadlines')])
-      .then(([profile, opportunities, saved, deadlines]) => setData({ profile: profile.data, opportunities: opportunities.data, saved: saved.data, deadlines: deadlines.data }))
-      .catch(() => { setLoadFailed(true); setError('Dashboard data could not be loaded. Please try again.') })
+    Promise.allSettled([api.get('/profile'), api.get('/opportunities'), api.get('/saved-opportunities'), api.get('/deadlines'), api.get('/notifications')])
+      .then(([profile, opportunities, saved, deadlines, notifications]) => {
+        const next = { profile: null, opportunities: asList(opportunities), saved: asList(saved), deadlines: asList(deadlines), notifications: asList(notifications) }
+        const errors = {}
+        if (profile.status === 'fulfilled') next.profile = profile.value.data
+        else errors.profile = 'Profile information could not be loaded.'
+        if (opportunities.status === 'rejected') errors.opportunities = 'Opportunity totals are unavailable right now.'
+        if (saved.status === 'rejected') errors.saved = 'Saved opportunity totals are unavailable right now.'
+        if (deadlines.status === 'rejected') errors.deadlines = 'Deadlines could not be loaded.'
+        if (notifications.status === 'rejected') errors.notifications = 'Recent updates could not be loaded.'
+        setData(next)
+        setRequestErrors(errors)
+      })
       .finally(() => setLoading(false))
   }, [])
-  const savedIds = useMemo(() => new Set(data.saved.map(item => item.id)), [data.saved])
-  const completed = profileFields.filter(field => data.profile?.[field] !== null && data.profile?.[field] !== undefined && data.profile?.[field] !== '').length
-  const percent = Math.round(completed / profileFields.length * 100)
+
+  const upcomingDeadlines = useMemo(() => (data.deadlines || []).filter(item => item.status !== 'PASSED' && item.status !== 'UNSCHEDULED' && item.deadline), [data.deadlines])
+  const completedFields = profileFields.filter(field => data.profile?.[field] !== null && data.profile?.[field] !== undefined && data.profile?.[field] !== '').length
+  const profilePercent = data.profile ? Math.round(completedFields / profileFields.length * 100) : null
   const stats = [
-    ['Profile completion', loading ? '—' : `${percent}%`, 'person-check', 'Based on your profile details'],
-    ['Available opportunities', loading ? '—' : data.opportunities.length, 'compass', 'From the opportunity catalogue'],
-    ['Saved opportunities', loading ? '—' : data.saved.length, 'bookmark', 'Saved to your account'],
-    ['Upcoming deadlines', loading ? '—' : data.deadlines.length, 'calendar-event', 'Recorded in LifePath'],
+    ['Profile completion', profilePercent === null ? (loading ? 'â€”' : 'Unavailable') : `${profilePercent}%`, 'person-check', 'Based on your profile details'],
+    ['Available opportunities', data.opportunities === null ? (loading ? 'â€”' : 'Unavailable') : data.opportunities.length, 'compass', 'From the opportunity catalogue'],
+    ['Saved opportunities', data.saved === null ? (loading ? 'â€”' : 'Unavailable') : data.saved.length, 'bookmark', 'Saved to your account'],
+    ['Upcoming deadlines', data.deadlines === null ? (loading ? 'â€”' : 'Unavailable') : upcomingDeadlines.length, 'calendar-event', 'Recorded in LifePath'],
   ]
-  const toggleSave = async opportunity => {
-    const isSaved = savedIds.has(opportunity.id)
-    try {
-      if (isSaved) { await api.delete(`/saved-opportunities/${opportunity.id}`); setData(current => ({ ...current, saved: current.saved.filter(item => item.id !== opportunity.id) })) }
-      else { await api.post(`/saved-opportunities/${opportunity.id}`); setData(current => ({ ...current, saved: [...current.saved, opportunity] })) }
-    } catch { setError('Your saved opportunities could not be updated. Please try again.') }
+  const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'
+  const submitSearch = event => {
+    event.preventDefault()
+    const value = search.trim()
+    navigate(`/user/opportunities${value ? `?search=${encodeURIComponent(value)}` : ''}`)
   }
-  if (loadFailed) return <><PageHeader title={user?.name ? `Welcome back, ${user.name}` : 'Your LifePath'} subtitle="Your profile and opportunities, together in one place."/><div className="alert alert-danger" role="alert">{error}</div><EmptyState icon="cloud-slash" title="Your overview is unavailable">Please try again when the LifePath services are reachable.</EmptyState></>
+
   return <>
-    <PageHeader title={user?.name ? `Welcome back, ${user.name}` : 'Your LifePath'} subtitle="Your profile and opportunities, together in one place." />
-    {error && <div className="alert alert-danger" role="alert">{error}</div>}
-    <div className="row g-3 mb-4">{stats.map(([label, value, icon, detail], index) => <div className="col-sm-6 col-xl-3" key={label}><StatCard {...{ label, value, icon, detail, loading, delay: index }} /></div>)}</div>
-    <div className="row g-4"><div className="col-lg-8"><section className="card section-card h-100"><div className="card-body"><div className="section-title"><div><h2>Opportunities to explore</h2><p>Current listings from LifePath</p></div><Link to="/user/opportunities" className="btn btn-outline-primary btn-sm">Browse all</Link></div>
-      {loading ? <div className="row g-3" aria-label="Loading opportunities"><div className="col-md-6"><div className="skeleton skeleton-card"/></div><div className="col-md-6"><div className="skeleton skeleton-card"/></div></div> : data.opportunities.length === 0 ? <EmptyState icon="compass" title="No opportunities available">New opportunities will appear here when they are added.</EmptyState> : <div className="row g-3">{data.opportunities.slice(0, 3).map(item => <div className="col-md-6" key={item.id}><OpportunityCard opportunity={item} saved={savedIds.has(item.id)} onToggleSave={toggleSave}/></div>)}</div>}
-    </div></section></div>
-    <div className="col-lg-4"><section className="card section-card h-100"><div className="card-body"><div className="section-title"><div><h2>Your next step</h2><p>A small step makes it easier to get started</p></div></div>
-      {loading ? <div className="skeleton skeleton-line"/> : <><div className="profile-progress"><div className="d-flex justify-content-between small mb-2"><span>Profile completion</span><strong>{percent}%</strong></div><div className="progress" role="progressbar" aria-label="Profile completion" aria-valuenow={percent} aria-valuemin="0" aria-valuemax="100"><div className="progress-bar" style={{ width: `${percent}%` }}/></div></div><p className="next-step-copy">{percent < 100 ? 'Add the details you are comfortable sharing so eligibility services can use your profile.' : 'Your profile details are complete. Explore opportunities that interest you.'}</p><Link className="btn btn-primary w-100" to={percent < 100 ? '/user/profile' : '/user/opportunities'}>{percent < 100 ? 'Continue your profile' : 'Explore opportunities'} <i className="bi bi-arrow-right ms-2"/></Link></>}
-    </div></section></div></div>
-    <section className="card section-card mt-4"><div className="card-body"><div className="section-title"><div><h2>Upcoming deadlines</h2><p>Dates recorded for opportunities</p></div><Link to="/user/deadlines" className="btn btn-link">View all</Link></div>
-      {loading ? <div className="skeleton skeleton-table"/> : data.deadlines.length === 0 ? <EmptyState icon="calendar2-check" title="No upcoming deadlines">There are no future deadlines recorded for your opportunities.</EmptyState> : <div className="table-responsive"><table className="table align-middle"><thead><tr><th>Opportunity</th><th>Deadline</th></tr></thead><tbody>{data.deadlines.slice(0, 4).map(item => <tr key={item.id}><td className="fw-semibold">{item.opportunityTitle}</td><td>{item.deadline ? new Date(item.deadline).toLocaleDateString() : 'Date not specified'}</td></tr>)}</tbody></table></div>}
-    </div></section>
+    <section className="dashboard-welcome" aria-labelledby="dashboard-welcome-title">
+      <div className="dashboard-welcome-copy"><span className="dashboard-welcome-kicker"><i className="bi bi-compass me-2"/>YOUR NEXT STEP STARTS HERE</span><h1 id="dashboard-welcome-title">{user?.name ? `${greeting}, ${user.name}` : 'Welcome to LifePath'}</h1><p>Discover opportunities, check your eligibility and keep track of what to do next.</p>
+        <form className="dashboard-search" role="search" onSubmit={submitSearch}><label className="visually-hidden" htmlFor="dashboard-opportunity-search">Search opportunities</label><i className="bi bi-search" aria-hidden="true"/><input id="dashboard-opportunity-search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search scholarships, jobs or exams"/><button type="submit" className="btn btn-primary">Search</button></form>
+      </div><img src="/illustrations/discover.svg" alt="" aria-hidden="true"/>
+    </section>
+
+    <section className="dashboard-overview" aria-label="Your LifePath overview"><div className="row g-3">{stats.map(([label, value, icon, detail], index) => <div className="col-sm-6 col-xl-3" key={label}><StatCard label={label} value={value} icon={icon} detail={requestErrors[label === 'Profile completion' ? 'profile' : label === 'Available opportunities' ? 'opportunities' : label === 'Saved opportunities' ? 'saved' : 'deadlines'] || detail} loading={loading} delay={index}/></div>)}</div></section>
+
+    <section className="dashboard-feature-section" aria-labelledby="dashboard-features-title"><div className="section-title"><div><h2 id="dashboard-features-title">What would you like to do?</h2><p>Choose a feature to continue.</p></div></div><div className="dashboard-feature-grid">{featureCards.map(card => <Link className="dashboard-feature-card" key={card.to} to={card.to}>
+      <div className="dashboard-feature-art"><img src={`/illustrations/${card.image}.svg`} alt="" aria-hidden="true"/></div><div className="dashboard-feature-copy"><h3>{card.title}</h3><p>{card.description}</p><span>{card.action}<i className="bi bi-arrow-right" aria-hidden="true"/></span></div>
+    </Link>)}</div></section>
+
+    <div className="dashboard-summary-grid">
+      <section className="card section-card dashboard-summary-card"><div className="card-body"><div className="section-title"><div><h2>Upcoming deadlines</h2><p>Your next application dates.</p></div><Link to="/user/deadlines" className="btn btn-outline-primary btn-sm">All deadlines <i className="bi bi-arrow-right ms-1"/></Link></div>
+        {loading ? <div className="skeleton skeleton-table" aria-label="Loading deadlines"/> : data.deadlines === null ? <p className="dashboard-summary-error" role="status">{requestErrors.deadlines}</p> : upcomingDeadlines.length === 0 ? <EmptyState icon="calendar2-check" title="No upcoming deadlines">Dates from your opportunities will appear here.</EmptyState> : <div className="dashboard-deadline-list">{upcomingDeadlines.slice(0, 4).map(item => <article className="dashboard-deadline-row" key={item.id}><span className={`dashboard-deadline-icon ${item.status === 'DUE_SOON' ? 'is-due-soon' : ''}`}><i className="bi bi-calendar-event" aria-hidden="true"/></span><div><strong>{item.opportunityTitle || item.title}</strong><small>{item.title && item.opportunityTitle ? item.title : item.daysRemaining === 0 ? 'Due today' : item.daysRemaining > 0 ? `${item.daysRemaining} days left` : 'Upcoming date'}</small></div><time>{item.deadline ? new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(item.deadline)) : 'Date not specified'}</time></article>)}</div>}
+      </div></section>
+      <section className="card section-card dashboard-summary-card"><div className="card-body"><div className="section-title"><div><h2>Recent updates</h2><p>Latest notifications from LifePath.</p></div><Link to="/user/notifications" className="btn btn-outline-primary btn-sm">All updates <i className="bi bi-arrow-right ms-1"/></Link></div>
+        {loading ? <div className="skeleton skeleton-table" aria-label="Loading updates"/> : data.notifications === null ? <p className="dashboard-summary-error" role="status">{requestErrors.notifications}</p> : data.notifications.length === 0 ? <EmptyState icon="bell" title="You are all caught up">New account updates will appear here.</EmptyState> : <div className="dashboard-update-list">{data.notifications.slice(0, 4).map(item => <article className={`dashboard-update-row ${item.read ? '' : 'is-unread'}`} key={item.id}><span className="dashboard-update-icon"><i className="bi bi-bell" aria-hidden="true"/></span><div><strong>{item.message}</strong>{item.createdAt && <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time>}</div>{!item.read && <span className="dashboard-update-unread" aria-label="Unread"/>}</article>)}</div>}
+      </div></section>
+    </div>
+    {requestErrors.opportunities && <p className="dashboard-data-note" role="status">{requestErrors.opportunities}</p>}
   </>
 }

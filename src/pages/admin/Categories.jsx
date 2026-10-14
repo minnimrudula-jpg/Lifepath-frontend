@@ -1,1 +1,1 @@
-﻿export { AdminPage as default } from '../PageContent'
+﻿export { Categories as default } from './AdminManagement'

@@ -1,1 +1,1 @@
-﻿export { AdminPage as default } from '../PageContent'
+﻿export { Analytics as default } from './AdminManagement'

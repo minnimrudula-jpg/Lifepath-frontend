@@ -1,16 +1,22 @@
-# React + Vite
+﻿# LifePath Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React and Vite frontend for the LifePath personalized eligibility and opportunity discovery platform.
 
-Currently, two official plugins are available:
+## Local development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Install Node.js supported by the project dependencies and run `npm install`.
+2. Copy `.env.example` to `.env.local` and set `VITE_API_BASE_URL` to the backend API base URL. For local development, the default is `http://localhost:8080/api`.
+3. Run `npm run dev`.
 
-## React Compiler
+The frontend sends API requests to `VITE_API_BASE_URL`. When the variable is not set, development uses `http://localhost:8080/api`; production builds use the same-origin `/api` path.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Production configuration
 
-## Expanding the ESLint configuration
+Set `VITE_API_BASE_URL` in the frontend hosting build environment to the deployed backend API base URL, including `/api` when that is the backend context path, for example `https://api.example.com/api`. Vite embeds this value at build time, so set it before running `npm run build`. Do not put backend credentials or secrets in `VITE_` variables; values with this prefix are public in the generated client bundle.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The app uses `BrowserRouter`. Configure the web host to serve `index.html` for client-side route requests (SPA fallback), while keeping static asset paths intact. Configure the backend for the deployed frontend origin, including CORS and the authentication settings it requires; those are backend/hosting tasks outside this frontend.
+
+## Checks
+
+- `npm run lint`
+- `npm run build`

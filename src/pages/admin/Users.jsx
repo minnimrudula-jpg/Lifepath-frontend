@@ -1,1 +1,1 @@
-﻿export { AdminPage as default } from '../PageContent'
+﻿export { Users as default } from './AdminManagement'

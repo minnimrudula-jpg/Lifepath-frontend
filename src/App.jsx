@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
 import RoleRoute from './routes/RoleRoute'
@@ -13,8 +13,19 @@ import Profile from './pages/user/Profile'
 import SavedOpportunities from './pages/user/SavedOpportunities'
 import Deadlines from './pages/user/Deadlines'
 import EligibilityStart from './pages/user/EligibilityStart'
-import UserEmptyPage from './pages/user/UserEmptyPage'
+import Documents from './pages/user/Documents'
+import Preparation from './pages/user/Preparation'
+import Notifications from './pages/user/Notifications'
+import Settings from './pages/user/Settings'
+import Categories from './pages/admin/Categories'
+import EligibilityRules from './pages/admin/EligibilityRules'
+import Users from './pages/admin/Users'
+import AdminDocuments from './pages/admin/AdminDocuments'
+import Analytics from './pages/admin/Analytics'
+import AdminSettings from './pages/admin/AdminSettings'
+import AdminOpportunities from './pages/admin/AdminOpportunities'
 import './App.css'
+import './design-system.css'
+import './theme.css'
 
-export default function App() { return <BrowserRouter><AuthProvider><Routes><Route path="/" element={<Landing/>}/><Route path="/login" element={<Login/>}/><Route path="/register" element={<Register/>}/><Route element={<ProtectedRoute/>}><Route element={<RoleRoute role="USER"/>}><Route path="/user" element={<UserLayout/>}><Route index element={<Navigate to="dashboard" replace/>}/><Route path="dashboard" element={<Dashboard/>}/><Route path="profile" element={<Profile/>}/><Route path="opportunities" element={<Opportunities/>}/><Route path="opportunities/:id" element={<OpportunityDetail/>}/><Route path="eligibility" element={<EligibilityStart/>}/><Route path="eligibility/:id" element={<Eligibility/>}/><Route path="saved" element={<SavedOpportunities/>}/><Route path="documents" element={<UserEmptyPage type="documents"/>}/><Route path="deadlines" element={<Deadlines/>}/><Route path="preparation" element={<UserEmptyPage type="preparation"/>}/><Route path="notifications" element={<UserEmptyPage type="notifications"/>}/><Route path="settings" element={<UserEmptyPage type="settings"/>}/></Route></Route><Route element={<RoleRoute role="ADMIN"/>}><Route path="/admin" element={<AdminLayout/>}><Route index element={<Navigate to="dashboard" replace/>}/><Route path="dashboard" element={<AdminDashboard/>}/><Route path="users" element={<AdminPage type="users"/>}/><Route path="opportunities" element={<AdminPage type="opportunities"/>}/><Route path="categories" element={<AdminPage type="categories"/>}/><Route path="eligibility-rules" element={<AdminPage type="eligibility-rules"/>}/><Route path="documents" element={<AdminPage type="documents"/>}/><Route path="deadlines" element={<AdminPage type="deadlines"/>}/><Route path="analytics" element={<AdminPage type="analytics"/>}/><Route path="settings" element={<AdminPage type="settings"/>}/></Route></Route></Route><Route path="*" element={<NotFound/>}/></Routes></AuthProvider></BrowserRouter> }
-
+export default function App() { return <BrowserRouter><AuthProvider><Routes><Route path="/" element={<Landing/>}/><Route path="/login" element={<Login/>}/><Route path="/register" element={<Register/>}/><Route element={<ProtectedRoute/>}><Route element={<RoleRoute role="USER"/>}><Route path="/user" element={<UserLayout/>}><Route index element={<Navigate to="dashboard" replace/>}/><Route path="dashboard" element={<Dashboard/>}/><Route path="profile" element={<Profile/>}/><Route path="opportunities" element={<Opportunities/>}/><Route path="opportunities/:id" element={<OpportunityDetail/>}/><Route path="eligibility" element={<EligibilityStart/>}/><Route path="eligibility/:id" element={<Eligibility/>}/><Route path="saved" element={<SavedOpportunities/>}/><Route path="documents" element={<Documents/>}/><Route path="deadlines" element={<Deadlines/>}/><Route path="preparation" element={<Preparation/>}/><Route path="notifications" element={<Notifications/>}/><Route path="settings" element={<Settings/>}/></Route></Route><Route element={<RoleRoute role="ADMIN"/>}><Route path="/admin" element={<AdminLayout/>}><Route index element={<Navigate to="dashboard" replace/>}/><Route path="dashboard" element={<AdminDashboard/>}/><Route path="users" element={<Users/>}/><Route path="opportunities" element={<AdminOpportunities/>}/><Route path="categories" element={<Categories/>}/><Route path="eligibility-rules" element={<EligibilityRules/>}/><Route path="documents" element={<AdminDocuments/>}/><Route path="deadlines" element={<AdminPage type="deadlines"/>}/><Route path="analytics" element={<Analytics/>}/><Route path="settings" element={<AdminSettings/>}/></Route></Route></Route><Route path="*" element={<NotFound/>}/></Routes></AuthProvider></BrowserRouter> }

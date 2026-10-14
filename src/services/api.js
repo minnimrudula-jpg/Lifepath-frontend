@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: 'http://localhost:8080/api', headers: { 'Content-Type': 'application/json', Accept: 'application/json' } })
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL?.trim() || (import.meta.env.DEV ? 'http://localhost:8080/api' : '/api')
+const api = axios.create({ baseURL: apiBaseURL, headers: { 'Content-Type': 'application/json', Accept: 'application/json' } })
 api.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('lifepath_access_token')
   if (token) config.headers.Authorization = `Bearer ${token}`

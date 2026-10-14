@@ -1,7 +1,7 @@
-﻿import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import api from '../services/api'
+import AuthContext from './AuthContextValue'
 
-const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => sessionStorage.getItem('lifepath_access_token'))
   const [user, setUser] = useState(() => { try { return JSON.parse(sessionStorage.getItem('lifepath_user')) } catch { return null } })
@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => { sessionStorage.removeItem('lifepath_access_token'); sessionStorage.removeItem('lifepath_user'); setToken(null); setUser(null); setReady(true) }, [])
   useEffect(() => { window.addEventListener('lifepath:unauthorized', logout); return () => window.removeEventListener('lifepath:unauthorized', logout) }, [logout])
   useEffect(() => {
-    if (!token) { setReady(true); return }
+    if (!token) return
     let active = true
     api.get('/auth/me').then(({ data }) => {
       if (!active) return
@@ -28,4 +28,3 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({ user, token, role: user?.role ?? null, isAuthenticated: Boolean(token && user), ready, login, logout, register }), [user, token, ready, login, logout, register])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
-export const useAuth = () => useContext(AuthContext)
